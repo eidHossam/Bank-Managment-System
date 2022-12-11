@@ -6,9 +6,11 @@
 
 #include <stdio.h>
 #include <windows.h>
+#include <string.h>
 
 typedef struct account
 {
+    UINT16 acc_no;
     char name[NAME_MAX];
     char password[PASS_MAX];
     UINT32 balance;
@@ -18,5 +20,8 @@ typedef struct account
 void print_menu(void);
 void system_body(void);
 void add_data_to_file(void);
+bool check_duplicate_name(void);
+bool check_duplicate_id(void);
 void add_account(void);
+void print_account_data(void);
 #endif
