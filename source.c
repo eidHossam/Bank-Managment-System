@@ -33,9 +33,20 @@ void system_body(void)
         add_account();
         break;
 
+    case 2:
+        modify_data();
+        break;
+
     case 4:
+        print_accounts_data();
+        break;
+
+    case 5:
         print_account_data();
         break;
+
+    case 7:
+        close();
 
     default:
         break;
@@ -86,6 +97,8 @@ validPass:
     scanf("%d", &curr.balance);
 
     add_data_to_file();
+
+    system_body();
 }
 
 void add_data_to_file(void)
@@ -94,9 +107,10 @@ void add_data_to_file(void)
 
     if (myfile)
     {
-        fwrite(&curr, sizeof(account), 1, myfile);
-        // fprintf(myfile, "%d %s %s %d %d\n", curr.acc_no, curr.name, curr.password, curr.phoneNum, curr.balance);
+        fwrite(&curr, sizeof(account_t), 1, myfile);
         fclose(myfile);
+        printf("\n\n\n\t\t\tYour account was successfully added to the system!.\n");
+        nav_to_main_menu();
         return;
     }
 
@@ -112,7 +126,7 @@ bool check_duplicate_name(void)
     {
         while (!feof(myfile))
         {
-            fread(&curr, sizeof(account), 1, myfile);
+            fread(&curr, sizeof(account_t), 1, myfile);
             if (strcmp(curr.name, name) == 0)
             {
                 fclose(myfile);
@@ -122,6 +136,7 @@ bool check_duplicate_name(void)
     }
     fclose(myfile);
     strcpy(curr.name, name);
+    curr.acc_no = id;
     return true;
 }
 
@@ -133,7 +148,7 @@ bool check_duplicate_id(void)
     {
         while (!feof(myfile))
         {
-            fread(&curr, sizeof(account), 1, myfile);
+            fread(&curr, sizeof(account_t), 1, myfile);
             if (curr.acc_no == id)
             {
                 fclose(myfile);
@@ -142,11 +157,10 @@ bool check_duplicate_id(void)
         }
     }
     fclose(myfile);
-    curr.acc_no = id;
     return true;
 }
 
-void print_account_data(void)
+void print_accounts_data(void)
 {
     system("cls");
 
@@ -155,14 +169,79 @@ void print_account_data(void)
     {
         printf("\n\t\t  Acc_no\t   Acc_name\t\t    Password\t\tPhone_num\t     Balance\n");
         printf("\t\t----------------------------------------------------------------------------------------------------");
-        while (!feof(myfile))
+        while (fread(&curr, sizeof(account_t), 1, myfile) > 0)
         {
-            fread(&curr, sizeof(account), 1, myfile);
             printf("\n\t\t%6d\t%20s\t%20s\t\t%6d\t\t%10d", curr.acc_no, curr.name, curr.password, curr.phoneNum, curr.balance);
         }
         fclose(myfile);
+        nav_to_main_menu();
+        system_body();
         return;
     }
 
     printf("There was an error retrieving the data!.\n");
+}
+
+void modify_data(void)
+{
+    system("cls");
+    printf("\n\n\n\n\t\t\t\tEnter the number of the account you want to modify: ");
+    fflush(stdin);
+    scanf("%d", id);
+
+    // myfile = fopen("data.bin", "rb");
+    // if (myfile)
+    // {
+    //     while (!feof(myfile))
+    //     {
+    //         fread(&curr, sizeof(account), 1, myfile);
+    //         if (curr.acc_no == id)
+    //         {
+    //         }
+    //     }
+    // }
+}
+
+void print_account_data(void)
+{
+    system("cls");
+    printf("\n\n\n\n\t\t\t\tEnter the number of the account you want to show: ");
+    scanf("%d", &id);
+
+    myfile = fopen("data.bin", "rb");
+    if (myfile)
+    {
+        while (fread(&curr, sizeof(account_t), 1, myfile) > 0)
+        {
+            if (curr.acc_no == id)
+            {
+                printf("\n\t\t  Acc_no\t   Acc_name\t\t    Password\t\tPhone_num\t     Balance\n");
+                printf("\t\t----------------------------------------------------------------------------------------------------");
+                printf("\n\t\t%6d\t%20s\t%20s\t\t%6d\t\t%10d", curr.acc_no, curr.name, curr.password, curr.phoneNum, curr.balance);
+
+                nav_to_main_menu();
+
+                fclose(myfile);
+                system_body();
+                return;
+            }
+        }
+
+        printf("\n\n\t\t\t\tThis account doesn't exist!.\n");
+        nav_to_main_menu();
+    }
+    system_body();
+}
+
+void close(void)
+{
+    system("cls");
+    printf("\n\n\n\n\t\t\t\t\tThank you for using our system!.");
+}
+
+void nav_to_main_menu(void)
+{
+    printf("\n\n\t\t\t\tPress any key to go back to the main menu.");
+    fflush(stdin);
+    getchar();
 }

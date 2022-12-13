@@ -23,5 +23,9 @@ void add_data_to_file(void);
 bool check_duplicate_name(void);
 bool check_duplicate_id(void);
 void add_account(void);
+void print_accounts_data(void);
 void print_account_data(void);
+void modify_data(void);
+void nav_to_main_menu(void);
+void close(void);
 #endif
