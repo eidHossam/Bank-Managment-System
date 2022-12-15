@@ -19,13 +19,16 @@ typedef struct account
 
 void print_menu(void);
 void system_body(void);
+void add_account(void);
+void get_data(void);
 void add_data_to_file(void);
 bool check_duplicate_name(void);
 bool check_duplicate_id(void);
-void add_account(void);
 void print_accounts_data(void);
 void print_account_data(void);
 void modify_data(void);
+void delete_account(void);
+void insert_modified_data(int count);
 void nav_to_main_menu(void);
 void close(void);
 #endif

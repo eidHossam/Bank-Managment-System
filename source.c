@@ -2,6 +2,7 @@
 
 static account_t curr;
 static FILE *myfile;
+static FILE *temp;
 static char name[NAME_MAX];
 static UINT16 id;
 
@@ -45,6 +46,10 @@ void system_body(void)
         print_account_data();
         break;
 
+    case 6:
+        delete_account();
+        break;
+
     case 7:
         close();
 
@@ -56,6 +61,16 @@ void system_body(void)
 void add_account()
 {
     system("cls");
+
+    get_data();
+
+    add_data_to_file();
+
+    system_body();
+}
+
+void get_data(void)
+{
 
 // To eliminate the repetition in this segment of code i can take all the inputs from the user then validate all of them together
 // but i prefered this style as it gives instant feedback to the user if what he just entered is valid on not.
@@ -95,10 +110,6 @@ validPass:
 
     printf("Enter your balance: ");
     scanf("%d", &curr.balance);
-
-    add_data_to_file();
-
-    system_body();
 }
 
 void add_data_to_file(void)
@@ -187,19 +198,23 @@ void modify_data(void)
     system("cls");
     printf("\n\n\n\n\t\t\t\tEnter the number of the account you want to modify: ");
     fflush(stdin);
-    scanf("%d", id);
+    scanf("%d", &id);
 
-    // myfile = fopen("data.bin", "rb");
-    // if (myfile)
-    // {
-    //     while (!feof(myfile))
-    //     {
-    //         fread(&curr, sizeof(account), 1, myfile);
-    //         if (curr.acc_no == id)
-    //         {
-    //         }
-    //     }
-    // }
+    myfile = fopen("data.bin", "rb");
+    if (myfile)
+    {
+        while (fread(&curr, sizeof(account_t), 1, myfile) > 0)
+        {
+            if (curr.acc_no == id)
+            {
+                system("cls");
+                fclose(myfile);
+
+                nav_to_main_menu();
+                system_body();
+            }
+        }
+    }
 }
 
 void print_account_data(void)
@@ -230,6 +245,44 @@ void print_account_data(void)
         printf("\n\n\t\t\t\tThis account doesn't exist!.\n");
         nav_to_main_menu();
     }
+    system_body();
+}
+
+void delete_account(void)
+{
+    system("cls");
+    printf("\n\n\n\n\t\t\t\tEnter the number of the account you want to delete: ");
+    fflush(stdin);
+    scanf("%d", &id);
+
+    bool found = false;
+    myfile = fopen("data.bin", "rb");
+    temp = fopen("temp.bin", "ab");
+    if (myfile)
+    {
+        while (fread(&curr, sizeof(account_t), 1, myfile) > 0)
+        {
+            if (curr.acc_no == id)
+            {
+                found = true;
+                continue;
+            }
+
+            fwrite(&curr, sizeof(account_t), 1, temp);
+        }
+    }
+
+    fclose(myfile);
+    fclose(temp);
+    remove("data.bin");
+    rename("temp.bin", "data.bin");
+
+    if (found)
+        printf("\n\n\n\n\t\t\t\tThe account was deleted successfully!.");
+    else
+        printf("\n\n\n\n\t\t\t\tThere is no account with that number.");
+
+    nav_to_main_menu();
     system_body();
 }
 
