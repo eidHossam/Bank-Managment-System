@@ -1,10 +1,12 @@
 #include "header.h"
 
 static account_t curr;
+static transaction_t transaction;
 static FILE *myfile;
 static FILE *temp;
 static char name[NAME_MAX];
 static UINT16 id;
+static bool found = false;
 
 void print_menu(void)
 {
@@ -16,7 +18,8 @@ void print_menu(void)
     printf("\t\t\t\t4 - Show all accounts.\n");
     printf("\t\t\t\t5 - Show a specifc account.\n");
     printf("\t\t\t\t6 - Delete an account.\n");
-    printf("\t\t\t\t7 - Exit.\n\n");
+    printf("\t\t\t\t7 - Print transactions history.\n");
+    printf("\t\t\t\t8 - Exit.\n\n");
     printf("\t\t-------------------------------------------------------------------------------\n");
 }
 
@@ -38,6 +41,10 @@ void system_body(void)
         modify_data();
         break;
 
+    case 3:
+        make_transaction();
+        break;
+
     case 4:
         print_accounts_data();
         break;
@@ -51,6 +58,10 @@ void system_body(void)
         break;
 
     case 7:
+        print_transactions_data();
+        break;
+
+    case 8:
         close();
 
     default:
@@ -93,40 +104,11 @@ validName:
         goto validName;
     }
 
-    fflush(stdin);
+    get_phoneNumber();
 
-    printf("Enter your phone number: ");
-    scanf("%d", &curr.phoneNum);
+    get_password();
 
-validPass:
-    fflush(stdin);
-    printf("Enter your password: ");
-    gets(curr.password);
-    if (strlen(curr.password) < 8)
-    {
-        printf("The password must be at least 8 characters\n");
-        goto validPass;
-    }
-
-    printf("Enter your balance: ");
-    scanf("%d", &curr.balance);
-}
-
-void add_data_to_file(void)
-{
-    myfile = fopen("data.bin", "ab");
-
-    if (myfile)
-    {
-        fwrite(&curr, sizeof(account_t), 1, myfile);
-        fclose(myfile);
-        printf("\n\n\n\t\t\tYour account was successfully added to the system!.\n");
-        nav_to_main_menu();
-        return;
-    }
-
-    printf("There was an error opening the file!.\n");
-    system_body();
+    get_balance();
 }
 
 bool check_duplicate_name(void)
@@ -171,6 +153,50 @@ bool check_duplicate_id(void)
     return true;
 }
 
+void get_phoneNumber(void)
+{
+    fflush(stdin);
+    printf("Enter your phone number: ");
+    scanf("%d", &curr.phoneNum);
+}
+
+void get_password(void)
+{
+validPass:
+    fflush(stdin);
+    printf("Enter your password: ");
+    gets(curr.password);
+    if (strlen(curr.password) < 8)
+    {
+        printf("The password must be at least 8 characters\n");
+        goto validPass;
+    }
+}
+
+void get_balance(void)
+{
+    fflush(stdin);
+    printf("Enter your balance: ");
+    scanf("%d", &curr.balance);
+}
+
+void add_data_to_file(void)
+{
+    myfile = fopen("data.bin", "ab");
+
+    if (myfile)
+    {
+        fwrite(&curr, sizeof(account_t), 1, myfile);
+        fclose(myfile);
+        printf("\n\n\n\t\t\tYour account was successfully added to the system!.\n");
+        nav_to_main_menu();
+        return;
+    }
+
+    printf("There was an error opening the file!.\n");
+    system_body();
+}
+
 void print_accounts_data(void)
 {
     system("cls");
@@ -193,35 +219,32 @@ void print_accounts_data(void)
     printf("There was an error retrieving the data!.\n");
 }
 
-void modify_data(void)
+void print_transactions_data(void)
 {
     system("cls");
-    printf("\n\n\n\n\t\t\t\tEnter the number of the account you want to modify: ");
-    fflush(stdin);
-    scanf("%d", &id);
 
-    myfile = fopen("data.bin", "rb");
+    myfile = fopen("transaction.bin", "rb");
     if (myfile)
     {
-        while (fread(&curr, sizeof(account_t), 1, myfile) > 0)
+        printf("\n\t\t\t\t  Acc_no\t   type\t\t    amount\n");
+        printf("\t\t\t\t---------------------------------------");
+        while (fread(&transaction, sizeof(transaction_t), 1, myfile) > 0)
         {
-            if (curr.acc_no == id)
-            {
-                system("cls");
-                fclose(myfile);
-
-                nav_to_main_menu();
-                system_body();
-            }
+            printf("\n\t\t\t\t%6d\t%20s\t%6d", transaction.acc_no, transaction.typeOfTransaction, transaction.amount);
         }
+        fclose(myfile);
+        nav_to_main_menu();
+        system_body();
+        return;
     }
+
+    printf("There was an error retrieving the data!.\n");
 }
 
 void print_account_data(void)
 {
-    system("cls");
-    printf("\n\n\n\n\t\t\t\tEnter the number of the account you want to show: ");
-    scanf("%d", &id);
+    char show[] = "show";
+    select_account(show);
 
     myfile = fopen("data.bin", "rb");
     if (myfile)
@@ -248,27 +271,18 @@ void print_account_data(void)
     system_body();
 }
 
-void delete_account(void)
+void data(void (*fun)(void), char operation[])
 {
-    system("cls");
-    printf("\n\n\n\n\t\t\t\tEnter the number of the account you want to delete: ");
-    fflush(stdin);
-    scanf("%d", &id);
+    select_account(operation);
 
-    bool found = false;
+    found = false;
     myfile = fopen("data.bin", "rb");
     temp = fopen("temp.bin", "ab");
     if (myfile)
     {
         while (fread(&curr, sizeof(account_t), 1, myfile) > 0)
         {
-            if (curr.acc_no == id)
-            {
-                found = true;
-                continue;
-            }
-
-            fwrite(&curr, sizeof(account_t), 1, temp);
+            (*fun)();
         }
     }
 
@@ -278,12 +292,86 @@ void delete_account(void)
     rename("temp.bin", "data.bin");
 
     if (found)
-        printf("\n\n\n\n\t\t\t\tThe account was deleted successfully!.");
+        printf("\n\n\n\n\t\t\t\tThe changes you made were successful!.");
     else
         printf("\n\n\n\n\t\t\t\tThere is no account with that number.");
 
     nav_to_main_menu();
     system_body();
+}
+
+void modify_data(void)
+{
+    char modify[] = "modify";
+    data(mod, modify);
+}
+
+void mod(void)
+{
+    if (curr.acc_no == id)
+    {
+        found = true;
+        fflush(stdin);
+        printf("Enter your name: ");
+        gets(curr.name);
+
+        get_phoneNumber();
+
+        get_password();
+    }
+
+    fwrite(&curr, sizeof(account_t), 1, temp);
+}
+
+void delete_account(void)
+{
+    char dele[] = "delete";
+    data(del, dele);
+}
+
+void del(void)
+{
+    if (curr.acc_no == id)
+        found = true;
+
+    fwrite(&curr, sizeof(account_t), 1, temp);
+}
+
+void make_transaction(void)
+{
+    char transaction_select[] = "make a transaction in";
+    data(trans, transaction_select);
+}
+
+void trans(void)
+{
+    FILE *tra;
+    char type[2][NAME_MAX] = {"Withdraw", "Deposit"};
+    int select = 0;
+    if (curr.acc_no == id)
+    {
+        tra = fopen("transaction.bin", "wb");
+        found = true;
+        transaction.acc_no = id;
+        fflush(stdin);
+
+        printf("\n\n\n\n\t\t\t\t\tPress (0) to withdraw , (1) to deposit: ");
+        scanf("%d", &select);
+
+        strcpy(transaction.typeOfTransaction, type[select]);
+        printf("\n\t\t\t\tEnter the amount: ");
+        scanf("%d", &transaction.amount);
+
+        fwrite(&transaction, sizeof(transaction_t), 1, tra);
+        fclose(tra);
+
+        if (select == 0)
+            curr.balance -= transaction.amount;
+        else
+            curr.balance += transaction.amount;
+    }
+
+    fwrite(&curr, sizeof(account_t), 1, temp);
 }
 
 void close(void)
@@ -297,4 +385,12 @@ void nav_to_main_menu(void)
     printf("\n\n\t\t\t\tPress any key to go back to the main menu.");
     fflush(stdin);
     getchar();
+}
+
+void select_account(char operation[])
+{
+    system("cls");
+    printf("\n\n\n\n\t\t\t\tEnter the number of the account you want to %s: ", operation);
+    fflush(stdin);
+    scanf("%d", &id);
 }
