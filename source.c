@@ -1,12 +1,12 @@
 #include "header.h"
 
-static account_t curr;
-static transaction_t transaction;
-static FILE *myfile;
-static FILE *temp;
-static char name[NAME_MAX];
-static UINT16 id;
-static bool found = false;
+account_t curr;
+transaction_t transaction;
+FILE *myfile;
+FILE *temp;
+char name[NAME_MAX];
+UINT16 id;
+bool found = false;
 
 void print_menu(void)
 {
